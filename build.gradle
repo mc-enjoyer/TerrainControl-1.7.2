@@ -1,67 +1,66 @@
-// Information for all projects
+// Build script for Terrain Control for Bukkit
 
-// The default tasks for all projects
-defaultTasks 'removeOldReleases', 'build', 'shadowJar', 'createReleaseJar', 'install'
-
-allprojects
+buildscript
 {
-    version = "2.7.0-SNAPSHOT-for-MC-172"
-    group = "com.khorn.terraincontrol"
-
-    // Give this a value in a child project to change the name in your IDE
-    // Otherwise it will use the default name. In the case of the project
-    // 'platforms:bukkit', the default name is invalid because it contains a slash
-    ext.ideProjectName = null
-}
-
-// Information for all subprojects
-// (common, forge and bukkit, but not this file)
-subprojects
-{   task ->
-
-    task.plugins.withType(org.gradle.api.plugins.JavaBasePlugin)
+    repositories
     {
-        // We're still on Java 6
-        sourceCompatibility = '1.6'
-
-        // Generate Eclipse config files when using "gradle eclipse"
-        task.apply plugin: 'eclipse'
-
-        // Generate IntelliJ IDEA config files
-        task.apply plugin: 'idea'
-
-        // Change project name in Eclipse
-        // See comment above about the ideProjectName
-        task.eclipse.project.file.whenMerged
-        {   project ->
-
-            if (task.project.ext.ideProjectName != null)
-            {
-                project.name = task.project.ext.ideProjectName
-            }
-        }
-
-        // Since we're renaming projects, we need to rename the
-        // dependency 'common' to 'TerrainControl-Common'
-        task.eclipse.classpath.file.whenMerged
-        {   classpath ->
-            classpath.entries.findAll{ entry -> entry.path == "/common" }*.path = "/TerrainControl-Common"
-        }
-
+        jcenter() // For shadow plugin
     }
-
-    // Generate a pom.xml, upload to local Maven repository
-    apply plugin: 'maven'
-}
-
-task removeOldReleases <<
-{
-    allprojects
+    dependencies
     {
-        File distributionsFolder = new File(project.buildDir, "distributions")
-        if (distributionsFolder.exists())
-        {
-            distributionsFolder.deleteDir()
-        }
+        classpath 'com.github.jengelman.gradle.plugins:shadow:0.8'
     }
 }
+
+apply plugin: 'shadow'
+apply plugin: 'java'
+
+// Project properties
+archivesBaseName = "terraincontrol-bukkit"
+description = "TerrainControl for Bukkit"
+ext.ideProjectName = "TerrainControl-Bukkit"
+ext.bukkitVersion = "1.7.2-R0.3"
+
+repositories
+{
+    maven // For Bukkit and CraftBukkit
+    {
+        url "http://repo.bukkit.org/content/groups/public"
+    }
+    mavenCentral() // For log4j
+    mavenLocal()
+}
+
+dependencies
+{
+    compile 'org.bukkit:bukkit:' + ext.bukkitVersion
+    compile 'org.bukkit:craftbukkit:' + ext.bukkitVersion
+    compile project(':common')
+    compile 'org.apache.logging.log4j:log4j-api:2.0-beta9'
+    compile 'org.apache.logging.log4j:log4j-core:2.0-beta9'
+}
+
+// Replace text in plugin.yml
+processResources
+{
+    // Replace stuff in plugin.yml, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include 'plugin.yml'
+
+        // Replace version
+        expand 'version': project.version
+    }
+
+    // Copy everything else, that's not the plugin.yml
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'plugin.yml'
+    }
+}
+
+// Include all Terrain Control files in the jar
+shadow
+{
+    artifactAttached = false
+    include 'com/khorn/terraincontrol/**'
+}
+

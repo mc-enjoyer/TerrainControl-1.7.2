@@ -1,8 +1,0 @@
-*.jpg  	binary
-*.png 	binary
-*.gif 	binary
-
-*.txt text eol=lf
-*.java text eol=lf
-*.yml text eol=lf
-*.info text eol=lf
