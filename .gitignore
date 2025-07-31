@@ -3,3 +3,4 @@ target/
 *.bak
 *.iml
 TerrainControlExperiment/
+/resources/alfheim-craftbukkit-1.7.2-FINAL.jar
